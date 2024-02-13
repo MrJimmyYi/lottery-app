@@ -12,6 +12,7 @@ on:
 
 jobs:
   dev-build-apps:
+    name: dev-build-apps
     permissions:
       contents: write
     strategy:
