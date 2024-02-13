@@ -1,9 +1,14 @@
 name: Release
 on:
   push:
-    tags:
-      - 'beat-*'
-  workflow_dispatch:
+    branches:
+      - dev # 当 dev 分支发生提交时触发
+    # paths-ignore: # 避免这些文件改变时触发
+    #   - README.md
+    #   - LICENSE
+#    paths: # 指定哪些文件改变时触发
+#      - src/**
+#      - package.json
 
 jobs:
   release:
