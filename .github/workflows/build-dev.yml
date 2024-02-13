@@ -11,7 +11,7 @@ on:
 #      - package.json
 
 jobs:
-  release:
+  dev-build-apps:
     permissions:
       contents: write
     strategy:
@@ -57,7 +57,7 @@ jobs:
         with:
           name: build-artifacts-${{ matrix.platform }}
           path: |
-            ./src-tauri/target/release/*
+            ./target/release/*
 
 #      - name: Build the app
 #        uses: tauri-apps/tauri-action@v0
