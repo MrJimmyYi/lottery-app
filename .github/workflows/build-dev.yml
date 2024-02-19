@@ -58,7 +58,7 @@ jobs:
         with:
           name: build-artifacts-${{ matrix.platform }}
           path: |
-            ./target/release/*
+            ./target/release/lottery-app
 
 #      - name: Build the app
 #        uses: tauri-apps/tauri-action@v0
