@@ -11,6 +11,12 @@ export const SELECT_DURATION = 600;
 export const RESET_DURATION = 500;
 export const ROTATE_TIME = 3000;
 export const ROTATE_LOOP = 1000;
+export enum DRAW_STATUS {
+    READY = "ready",
+    DRAWING = "drawing",
+    DOWN = "down"
+}
+
 
 export interface Position {
     x: number;
@@ -44,4 +50,15 @@ export interface Target {
 export interface SelectedCardLocation {
     x: number,
     y: number
+}
+
+export interface Prize {
+    id: number,
+    range: string,
+    title: string,
+    imgSrc: string,
+    altText: string,
+    count: number,
+    total: number,
+    perCount: number
 }

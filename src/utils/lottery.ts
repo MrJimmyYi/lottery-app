@@ -7,7 +7,6 @@ export const GetLuckNum = (
     let start = 0;
     let selectedIndices = new Set<number>();
     let luckResIndex: number[] = [];
-
     while (start < n) {
         // 随机选取一个索引
         let randomIndex = Math.floor(Math.random() * indexArray.length);
