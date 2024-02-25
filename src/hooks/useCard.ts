@@ -358,13 +358,14 @@ export const RotateBall = (onTweenCreated: (tween: Tween<Euler>) => void):Promis
         let rotateObj = new TWEEN.Tween(scene.rotation)
             .to({ y: Math.PI * 6 * ROTATE_LOOP }, ROTATE_TIME * ROTATE_LOOP)
             .onUpdate(()=>{renderer.render(scene, camera)})
-            // .easing(TWEEN.Easing.Linear) // Uncomment or adjust as needed
+            .easing(TWEEN.Easing.Exponential.InOut)
             .start()
             .onStop(() => {
                 scene.rotation.y = 0;
                 resolve();
             })
             .onComplete(() => {
+                console.log("123")
                 resolve();
             });
         onTweenCreated(rotateObj);

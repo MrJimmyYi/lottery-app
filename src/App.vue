@@ -1,8 +1,10 @@
 <template>
-<!--  <StartFiled />-->
-  <ThreeDCards  />
+<!--  <div v-show="false">-->
+<!--    &lt;!&ndash;  <StartFiled />&ndash;&gt;-->
+<!--    <Home />-->
+<!--  </div>-->
+  <RouterView></RouterView>
 
-  <PrizeList />
 </template>
 
 <script setup lang="ts">
@@ -10,8 +12,7 @@
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
 //import Greet from "./components/Greet.vue";
 // import StartFiled from "@/components/StartFiled.vue"
-import ThreeDCards from "@/components/ThreeDCards.vue"
-import PrizeList from "@/components/PrizeList.vue"
+import {RouterView} from "vue-router";
 </script>
 
 <style scoped>

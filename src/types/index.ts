@@ -9,9 +9,19 @@ export const RESOLUTION = 1;
 export const DURATION = 2000;
 export const SELECT_DURATION = 600;
 export const RESET_DURATION = 500;
-export const ROTATE_TIME = 3000;
-export const ROTATE_LOOP = 1000;
+export const ROTATE_TIME = 1000;
+export const ROTATE_LOOP = 10;
+export const MAX_RANDOM_NUM = 1000000;
+
+export enum PAGES_OPTION {
+    HOME = "home",
+    MANAGEMENT = "management",
+    LUCKY_USERS = "luckyUsers"
+}
+
+
 export enum DRAW_STATUS {
+    TABLE = "table",
     READY = "ready",
     DRAWING = "drawing",
     DOWN = "down"
