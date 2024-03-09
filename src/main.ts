@@ -1,14 +1,14 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import '@/assets/css/main.css';
+import ElementPlus from 'element-plus'
+//import 'element-plus/dist/index.css'
 import router from "@/router";
 import {listen} from "@tauri-apps/api/event";
 
 const app = createApp(App);
-
 // 使用路由
 app.use(router);
-
+app.use(ElementPlus);
 // 示例: 监听后端 Tauri 事件（确保事件名称和负载类型正确）
 listen('navigate', (event) => {
     if (typeof event.payload === 'string') {

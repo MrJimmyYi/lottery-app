@@ -3,7 +3,8 @@
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
     "devPath": "http://localhost:1420",
-    "distDir": "../dist"
+    "distDir": "../dist",
+    "withGlobalTauri": true
   },
   "package": {
     "productName": "lottery-app",
@@ -15,11 +16,37 @@
       "shell": {
         "all": false,
         "open": true
+      },
+      "path": {
+        "all": true
+      },
+      "fs": {
+        "all": true,
+        "readFile": true,
+        "writeFile": true,
+        "readDir": true,
+        "copyFile": true,
+        "createDir": true,
+        "removeDir": true,
+        "removeFile": true,
+        "renameFile": true,
+        "exists": true,
+        "scope": ["$APPDATA/img/*", "$TEMP/*"]
+      },
+      "protocol": {
+        "all": false,
+        "asset": true,
+        "assetScope": [
+          "$APPDATA/img/*"
+        ]
+      },
+      "dialog": {
+        "all": true
       }
     },
     "windows": [
       {
-        "fullscreen": false,
+        "fullscreen": true,
         "resizable": true,
         "title": "lottery-app",
         "width": 800,
@@ -27,7 +54,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self'; asset: https://asset.localhost"
     },
     "bundle": {
       "active": true,
@@ -39,6 +66,9 @@
         "icons/128x128@2x.png",
         "icons/icon.icns",
         "icons/icon.ico"
+      ],
+      "resources": [
+        "bin/*"
       ]
     }
   }

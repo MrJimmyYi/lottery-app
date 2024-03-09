@@ -34,9 +34,13 @@ export interface Position {
 }
 
 // 定义 Card 接口
-export interface Card {
+export interface UserCard {
+    id: number;
     name: string;
     num: string; // 或者 number，取决于实际用途
+    img: string;
+    remark1: string;
+    remark2: string;
 }
 
 export interface Starts {
@@ -71,4 +75,9 @@ export interface Prize {
     count: number,
     total: number,
     perCount: number
+}
+
+export interface UserPageApiRes {
+    users: UserCard[]
+    total: number;
 }
