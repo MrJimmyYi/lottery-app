@@ -1,13 +1,12 @@
 import {
-    CardInfo,
     COLUMN_COUNT,
-    COMPANY, DRAW_STATUS, DURATION,
+    DRAW_STATUS, DURATION,
     Position, RESET_DURATION,
     RESOLUTION, ROTATE_LOOP, ROTATE_TIME,
     ROW_COUNT,
     SELECT_DURATION, SelectedCardLocation,
     Target,
-    TOTAL_CARDS,
+    TOTAL_CARDS, UserCard,
     WIDTH
 } from "@/types";
 import {Ref} from "vue";
@@ -46,25 +45,31 @@ export const GetRender = ():CSS3DRenderer =>{
     return renderer;
 }
 
-
-const createElement = (css: string = "", text: string = "", tagName: string=""): HTMLElement => {
+const createElement = (css: string = "", text: string = "", tagName: string="", src=""): HTMLElement => {
     let dom = document.createElement(tagName);
     dom.className = css;
-    dom.innerHTML = text;
+
+    if (tagName.toLowerCase() === "img" && src) {
+        dom.setAttribute("src", src);
+        dom.setAttribute("alt", text); // 使用 text 参数作为图片的 alt 文本
+    } else {
+        dom.innerHTML = text;
+    }
     return dom;
 };
 
 // createCard 函数转换
-export const CreateCard = (card: CardInfo, isBold: boolean, id: number | string): HTMLElement => {
+export const CreateCard = (card: UserCard, isBold: boolean, id: number | string): HTMLElement => {
     let element = createElement("element", "", "div"); // 假设初始 css 类名为 "element"
     element.id = `card-${id}`;
     element.className = isBold ? "element lightitem highlight" : "element";
     element.style.backgroundColor = `rgba(0,127,127,${Math.random() * 0.7 + 0.25})`;
 
     element.appendChild(createElement("card-close-btn", "x", "div"));
-    element.appendChild(createElement("company", COMPANY, "div"));
-    element.appendChild(createElement("name", card.name, "div"));
-    element.appendChild(createElement("details", card.num, "div"));
+    element.appendChild(createElement("card-num", card.num, "div"));
+    element.appendChild(createElement("card-img", card.name, "img", card.img));
+    element.appendChild(createElement("card-name", card.name, "div"));
+    element.appendChild(createElement("card-remark", card.remark, "div"));
     return element;
 };
 
@@ -72,9 +77,9 @@ export const CreateCard = (card: CardInfo, isBold: boolean, id: number | string)
 /**
  * 切换名牌人员信息
  */
-const changeCard = (threeDCards: Array<CSS3DObject>, cardIndex: number, card: CardInfo) => {
+const changeCard = (threeDCards: Array<CSS3DObject>, cardIndex: number, card: UserCard) => {
     let cardEle = threeDCards[cardIndex].element;
-    cardEle.innerHTML = `<div class="card-close-btn">x</div><div class="company">${COMPANY}</div><div class="name">${card.name}</div><div class="details">${card.num || ""}</div>`;
+    cardEle.innerHTML = `<div class="card-close-btn">x</div><div class="card-num">${card.num || ""}</div><img class="card-img" src="${card.img}"/><div class="card-name">${card.name || ""}</div><div class="card-remark">${card.remark || ""}</div>`;
 }
 
 /**
@@ -86,7 +91,7 @@ const random = (num: number) => {
 }
 
 // Dummy placeholder for other functions
-export const InitCards = (isBold: boolean, index: number, position:Position, allCardsArray: Array<CardInfo>, highlightCell: string[]): { targets: Target; threeDCards: Array<CSS3DObject> } => {
+export const InitCards = (isBold: boolean, index: number, position:Position, allCardsArray: Array<UserCard>, highlightCell: string[]): { targets: Target; threeDCards: Array<CSS3DObject> } => {
     // Initialization logic for cards
     let threeDCards: Array<CSS3DObject> = [];
     let targets: Target = { table: [], sphere: [] };
@@ -131,7 +136,7 @@ export const InitCards = (isBold: boolean, index: number, position:Position, all
 /**
  * 随机切换背景和人员信息
  */
-export const ShineCard = (threeDCards: Array<CSS3DObject>, allCardsArray: Array<CardInfo>, selectedCardIndex:Ref<Array<number>>, drawStatus:string):NodeJS.Timeout => {
+export const ShineCard = (threeDCards: Array<CSS3DObject>, allCardsArray: Array<UserCard>, selectedCardIndex:Ref<Array<number>>, drawStatus:string):NodeJS.Timeout => {
     let maxCard = 10,
         maxCardsArray;
     let shineCard = 10 + random(maxCard);
@@ -153,15 +158,14 @@ export const ShineCard = (threeDCards: Array<CSS3DObject>, allCardsArray: Array<
             card.style.backgroundColor = "rgba(0,127,127," + (Math.random() * 0.7 + 0.25) + ")";
             changeCard(threeDCards, cardIndex, shineCardsArray[index]);
         }
-    }, 500);
+    }, 1000);
     return intervalId;
 }
 
 
-export const SelectCard = (threeDCards: Array<CSS3DObject>, selectedIndex:Array<Number>, allCardsArray:Array<CardInfo>,  locates: Array<SelectedCardLocation>=[])=>{
+export const SelectCard = (threeDCards: Array<CSS3DObject>, selectedIndex:Array<Number>, allCardsArray:Array<UserCard>,  locates: Array<SelectedCardLocation>=[])=>{
     let width = WIDTH,
         tag = -(selectedIndex.length - 1) / 2;
-    console.log("locatesc", locates);
     //locates长度为0此时是结束抽奖后首次需要现实的卡片
     if(locates.length === 0 ) {
         // 计算位置信息, 大于5个分两排显示
@@ -365,7 +369,6 @@ export const RotateBall = (onTweenCreated: (tween: Tween<Euler>) => void):Promis
                 resolve();
             })
             .onComplete(() => {
-                console.log("123")
                 resolve();
             });
         onTweenCreated(rotateObj);

@@ -39,8 +39,6 @@ declare module 'vue' {
     ElUpload: typeof import('element-plus/es')['ElUpload']
     Greet: typeof import('./src/components/Greet.vue')['default']
     Home: typeof import('./src/components/Home.vue')['default']
-    LuckUser: typeof import('./src/components/LuckUser.vue')['default']
-    Management: typeof import('./src/components/Management.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     StartFiled: typeof import('./src/components/StartFiled.vue')['default']

@@ -4,7 +4,7 @@ import Wedding from "@/views/Wedding.vue"
 import Manage from '@/views/Manage.vue'; // 确保路径正确
 import Winners from '@/views/Winners.vue'; // 确保路径正确
 import ManageUser from '@/views/ManageUser.vue';
-import ManageRule from '@/views/ManageRule.vue';
+import ManagePrize from '@/views/ManagePrize.vue';
 import ManageBasic from '@/views/ManageBasic.vue';
 
 
@@ -24,8 +24,8 @@ const routes: Array<RouteRecordRaw> = [
                 component: ManageUser
             },
             {
-                path: 'rule',
-                component: ManageRule
+                path: 'prize',
+                component: ManagePrize
             },
             {
                 path: 'basic',

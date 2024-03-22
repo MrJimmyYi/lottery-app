@@ -25,11 +25,8 @@
         <el-icon><Plus /></el-icon>
       </el-upload>
     </el-form-item>
-    <el-form-item label="备注1" prop="remark1">
-      <el-input v-model="userForm.remark1" />
-    </el-form-item>
-    <el-form-item label="备注2" prop="remark2">
-      <el-input v-model="userForm.remark2" />
+    <el-form-item label="备注" prop="remark">
+      <el-input v-model="userForm.remark" />
     </el-form-item>
     <el-form-item>
       <el-button type="primary" @click="createUser(userFormRef)">创建</el-button>
@@ -43,7 +40,7 @@ import { defineEmits,reactive,ref } from 'vue';
 import {invoke} from "@tauri-apps/api/tauri";
 import {ElMessage, FormInstance} from "element-plus";
 import { Plus } from '@element-plus/icons-vue'
-import {UserCard} from "@/types";
+import {TauriResponse, UserCard} from "@/types";
 
 const emit = defineEmits(['close', "ok"]);
 
@@ -54,8 +51,7 @@ const userForm = ref<UserCard>({
   id: 0,
   name: '',
   num: '',
-  remark1: '',
-  remark2: '',
+  remark: '',
   img: ''
 })
 
@@ -96,8 +92,8 @@ const createUser = (userFormRef :FormInstance | null) => {
 
 const handleImgChange = async (file: any) => {
   selectedImg.value = file.raw;
-  const imgStr = await invoke('generate_imgstr', {fileName: file.name}) as string;
-  userForm.value.img = imgStr;
+  let res = await invoke('generate_imgstr', {fileName: file.name}) as TauriResponse<string>;
+  userForm.value.img = res.data ??'';
 }
 
 const cancelFn = () => {

@@ -1,16 +1,15 @@
 <template>
-  <el-container>
-    <el-header>
-      <el-button @click="addUser">添加</el-button>
-      <el-button @click="batchOperate">批量操作</el-button>
+  <el-container style="height:  100vh">
+    <el-header style="height: 5%">
+      <el-button @click="addPrize">添加</el-button>
     </el-header>
     <el-divider />
-    <el-main>
+    <el-main style="height: 90%">
       <el-table :data="tableData" style="width: 100%;height: 100%" >
         <el-table-column prop="id"   v-if="false" />
         <el-table-column label="序号" type="index" width="100" :index="getIndex"/>
-        <el-table-column prop="num" label="编号" width="100" />
-        <el-table-column prop="name" label="名称" width="100" />
+        <el-table-column prop="range" label="奖品等级" width="100" />
+        <el-table-column prop="name" label="奖品名称" width="100" />
         <el-table-column  label="图片" width="120" >
           <template #default="scope">
             <div style="display: flex; align-items: center">
@@ -18,33 +17,31 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="remark" label="备注" width="100" />
+        <el-table-column prop="count" label="已抽总数" width="100" />
+        <el-table-column prop="total" label="奖品总数" width="100" />
+        <el-table-column prop="perDraw" label="奖品总数" width="100" />
         <el-table-column fixed="right" label="操作" width="120">
           <template #default="scope">
             <el-button link type="primary" size="small" @click="showEdit(scope.row.id)">
               编辑
             </el-button>
-            <el-button link type="primary" size="small" @click.prevent="deleteBook(scope.row.id)">
+            <el-button link type="primary" size="small" @click.prevent="deletePrize(scope.row.id)">
               删除
             </el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <el-dialog v-model="batchDialogVisible" title="批量操作" :before-close="handleClose" :destroy-on-close=true>
-        <BatchOper @import="importFn"></BatchOper>
+      <el-dialog v-model="createDialogVisible" title="添加奖品" :before-close="handleClose" :destroy-on-close=true>
+        <PrizeAdd  @close="closeFn" @ok="okFn"></PrizeAdd>
       </el-dialog>
 
-      <el-dialog v-model="createDialogVisible" title="添加用户" :before-close="handleClose" :destroy-on-close=true>
-        <UserAdd  @close="closeFn" @ok="okFn"></UserAdd>
-      </el-dialog>
-
-      <el-dialog v-model="editDialogVisible" title="修改用户"  :before-close="handleClose" :destroy-on-close=true>
-        <UserEdit :id="editId" @ok="editOkFn" @close="editCloseFn" ></UserEdit>
+      <el-dialog v-model="editDialogVisible" title="修改奖品"  :before-close="handleClose" :destroy-on-close=true>
+        <PrizeEdit :id="editId" @ok="editOkFn" @close="editCloseFn" ></PrizeEdit>
       </el-dialog>
 
     </el-main>
-    <el-footer>
+    <el-footer style="height: 5%">
       <div class="example-pagination-block">
         <el-pagination
             layout="prev, pager, next"
@@ -58,30 +55,20 @@
     </el-footer>
   </el-container>
 
-  <el-dialog
-      v-model="dialogVisible"
-      title="用户信息"
-      width="500"
-  >
-
-  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import {onMounted, ref} from "vue";
-import {UserPageApiRes, UserCard} from "@/types";
 import {invoke} from "@tauri-apps/api/tauri";
 import {ElMessage, ElMessageBox} from "element-plus";
 import {convertFileSrc} from "@tauri-apps/api/tauri";
-import UserAdd from "@/views/ManageUser/add.vue";
-import UserEdit from "@/views/ManageUser/edit.vue";
-import BatchOper from "@/views/ManageUser/batchOper.vue";
+import PrizeAdd from "@/views/ManagePrize/add.vue";
+import PrizeEdit from "@/views/ManagePrize/edit.vue";
+import {PageData, Prize, TauriResponse} from "@/types";
 
-const dialogVisible = ref(false);
-const tableData = ref<UserCard[]>([])
+const tableData = ref<Prize[]>([])
 const createDialogVisible = ref(false);
 const editDialogVisible = ref(false);
-const batchDialogVisible = ref(false);
 
 // 当前页
 const currentPage = ref(1);
@@ -94,11 +81,6 @@ const getIndex = (index: number) => {
   return index + (currentPage.value-1)*(pageSize.value)+1;
 }
 
-const importFn = () => {
-  batchDialogVisible.value = false
-  fetchData();
-}
-
 const handleClose = (done: () => void) => {
   ElMessageBox.confirm('确定要关闭吗?')
       .then(() => {
@@ -108,19 +90,12 @@ const handleClose = (done: () => void) => {
         // catch error
       })
 }
-// 显示添加页面
-const addUser= ()=>{
-  createDialogVisible.value=true;
-}
 
 
 const closeFn=()=>{
   createDialogVisible.value = false;
 }
 
-const batchOperate = ()=> {
-  batchDialogVisible.value = true
-}
 
 const okFn=()=>{
   closeFn();
@@ -144,16 +119,15 @@ const editOkFn=()=>{
   fetchData();
 }
 
-const deleteBook = async (id: number) => {
+const deletePrize = async (id: number) => {
   try {
-    await invoke('delete_user', {
+    await invoke('delete_prize', {
       id: id,
     });
     await fetchData();
-    ElMessage.success('选中用户信息删除成功');
+    ElMessage.success('选中奖品信息删除成功');
   } catch (error) {
-    ElMessage.error('选中用户信息删除失败');
-    console.error('Failed to fetch paged users:', error);
+    ElMessage.error('选中奖品信息删除失败');
   }
 }
 
@@ -164,30 +138,25 @@ onMounted(()=>{
 const fetchData = async () => {
   try {
     // 调用后端接口获取分页数据，传递当前页和每页条目数
-    const response = await invoke('get_page_users', {
+    let res = await invoke('get_page_prizes', {
       page: currentPage.value,
       pageSize: pageSize.value
-    }) as UserPageApiRes;
+    }) as TauriResponse<PageData<Prize>>;
 
-    // for(let e of response.users) {
-    //   let fileName = e.img.split(/[/\\]/).pop();
-    //   if (fileName) {
-    //     const appDataDirPath = await appDataDir();
-    //     const filePath = await join(appDataDirPath, 'img', fileName);
-    //     const assetUrl = convertFileSrc(e.img);
-    //     e.img = assetUrl;
-    //   }
-    // }
-    for(let e of response.users) {
-      if (e.img) {
-        const assetUrl = convertFileSrc(e.img);
-        e.img = assetUrl;
+    if(res.data) {
+      let data = res.data
+      for(let e of data.data) {
+        if (e.img) {
+          const assetUrl = convertFileSrc(e.img);
+          e.img = assetUrl;
+        }
       }
+      // 更新表格数据
+      tableData.value = data.data ?? []
+      // 更新总条目数
+      totalItems.value = <number>data.total
     }
-    // 更新表格数据
-    tableData.value = response.users;
-    // 更新总条目数
-    totalItems.value = response.total;
+
   } catch (error) {
     console.error('Failed to fetch paged users:', error);
   }
@@ -202,6 +171,11 @@ const handleSizeChange = (newSize: number) => {
   pageSize.value = newSize;
   fetchData();
 };
+
+// 显示添加页面
+const addPrize= ()=>{
+  createDialogVisible.value=true;
+}
 
 </script>
 

@@ -14,7 +14,6 @@ export const GetLuckNum = (
         if(start > MAX_RANDOM_NUM){
             return [];
         }
-        console.log(n)
         // 随机选取一个索引
         let randomIndex = Math.floor(Math.random() * indexArray.length);
         if (selectedIndices.has(randomIndex) || selectedIndex.includes(randomIndex)) {
@@ -23,7 +22,6 @@ export const GetLuckNum = (
         selectedIndices.add(randomIndex);
         luckResIndex.push(randomIndex);
         start++;
-
     }
     return luckResIndex;
 };

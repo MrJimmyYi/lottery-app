@@ -30,10 +30,6 @@
       </el-upload>
     </el-form-item>
 
-    <el-form-item label="导出数据">
-      <el-button @click="exportData" >点击导出</el-button>
-    </el-form-item>
-
   </el-form>
 
 </template>
@@ -45,13 +41,14 @@ import {dialog, path} from "@tauri-apps/api";
 import {writeBinaryFile} from "@tauri-apps/api/fs";
 import {ElMessage} from "element-plus";
 import { ref,defineEmits } from 'vue'
+import {TauriResponse} from "@/types";
 
 const emit = defineEmits(['import']);
 
 const downloadUserTemplate = async () => {
   try {
     const fileName = 'userTemplate'
-    const fileBytes = await  invoke('download_template_excel', {fileName});
+    const res = await  invoke('download_template_excel', {fileName}) as TauriResponse<number[]>;
     const basePath = await path.downloadDir() + `/${fileName}`
     let selPath = await dialog.save({
       title: `保存文件`,
@@ -63,7 +60,7 @@ const downloadUserTemplate = async () => {
     });
     console.log("selPath----", selPath);
     if(selPath) {
-      await writeBinaryFile({ contents: fileBytes as any, path: `${selPath}` })
+      await writeBinaryFile({ contents: res.data ??[] , path: `${selPath}` })
       console.log("download")
     }
   } catch (error) {
@@ -96,11 +93,6 @@ const submitUpload = async () => {
   } else {
     console.log("No file selected for upload.");
   }
-
-}
-
-
-const exportData = () => {
 
 }
 </script>

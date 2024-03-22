@@ -1,7 +1,7 @@
 import { createApp } from "vue";
 import App from "./App.vue";
 import ElementPlus from 'element-plus'
-//import 'element-plus/dist/index.css'
+import 'element-plus/dist/index.css'
 import router from "@/router";
 import {listen} from "@tauri-apps/api/event";
 
@@ -14,7 +14,7 @@ listen('navigate', (event) => {
     if (typeof event.payload === 'string') {
         // 使用路由导航到不同页面
         console.log(event.payload)
-        router.push({ path: event.payload });
+        router.push({ name: event.payload });
     }
 }).catch((error) => console.error('Error listening to navigate event', error));
 

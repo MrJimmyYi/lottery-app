@@ -26,11 +26,8 @@
         <el-icon><Plus /></el-icon>
       </el-upload>
     </el-form-item>
-    <el-form-item label="备注1" prop="remark1">
-      <el-input v-model="userForm.remark1" />
-    </el-form-item>
-    <el-form-item label="备注2" prop="remark2">
-      <el-input v-model="userForm.remark2" />
+    <el-form-item label="备注" prop="remark">
+      <el-input v-model="userForm.remark" />
     </el-form-item>
     <el-form-item>
       <el-button type="primary" @click="updateUser(userFormRef)">创建</el-button>
@@ -42,7 +39,7 @@
 <script setup lang="ts">
 import {defineEmits, reactive, ref, onMounted, defineProps} from "vue";
 import {ElMessage, FormInstance, UploadUserFile} from "element-plus";
-import {UserCard} from "@/types";
+import {TauriResponse, UserCard} from "@/types";
 import {convertFileSrc, invoke} from "@tauri-apps/api/tauri";
 import { Plus } from '@element-plus/icons-vue'
 
@@ -56,8 +53,7 @@ const userForm = ref<UserCard>({
   id: 0,
   name: '',
   num: '',
-  remark1: '',
-  remark2: '',
+  remark: '',
   img: ''
 })
 
@@ -84,8 +80,8 @@ const rules = reactive({
 
 const handleImgChange = async (file: any) => {
   selectedImg.value = file.raw;
-  const imgStr = await invoke('generate_imgstr', {fileName: file.name}) as string;
-  userForm.value.img = imgStr;
+  let res = await invoke('generate_imgstr', {fileName: file.name}) as TauriResponse<string>;
+  userForm.value.img = res.data ?? '';
 }
 
 
@@ -94,7 +90,8 @@ const cancelFn = () => {
 }
 
 onMounted(async ()=>{
-  userForm.value = await invoke('get_user', {id: props.id})
+  let res = await invoke('get_user', {id: props.id}) as TauriResponse<UserCard>
+  userForm.value = res.data ?? userForm.value
   let fileName = userForm.value.img.split(/[/\\]/).pop();
   if(fileName) {
     const assetUrl = convertFileSrc(userForm.value.img);
@@ -110,12 +107,13 @@ const updateUser = (userFormRef :FormInstance | null) => {
     if (isOk) {
       try {
         const arrayBuffer = await selectedImg.value?.arrayBuffer();
+        let uint8Array:number[] = []
         if(arrayBuffer) {
-          let uint8Array = Array.from(new Uint8Array(arrayBuffer));
-          await invoke('update_user', {user: userForm.value, imgData: uint8Array});
-          emit('ok')
-          ElMessage.success('用户信息更新成功');
+          uint8Array = Array.from(new Uint8Array(arrayBuffer));
         }
+        await invoke('update_user', {user: userForm.value, imgData: uint8Array});
+        emit('ok')
+        ElMessage.success('用户信息更新成功');
       } catch (error) {
         console.log(error)
         ElMessage.error('用户信息更新失败');
