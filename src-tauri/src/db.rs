@@ -5,7 +5,7 @@ use std::sync::Arc;
 pub type DbPool = Arc<Pool<SqliteConnectionManager>>;
 use directories::ProjectDirs;
 use std::fs;
-use crate::model::{AppError, UserCard};
+use crate::model::{AppError, Prize, UserCard};
 pub type Result<T> = std::result::Result<T, AppError>;
 
 pub fn init_pool() -> Result<DbPool> {
@@ -35,19 +35,52 @@ pub fn create_card_table(pool: &DbPool) -> Result<()> {
             num TEXT NOT NULL,
             name TEXT NOT NULL,
             img TEXT NOT NULL,
-            remark1 TEXT,
-            remark2 TEXT
+            remark TEXT
          )",
         [],
     )?;
     Ok(())
 }
 
+pub fn create_prize_table(pool: &DbPool) -> Result<()> {
+    let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS prize (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            range TEXT NOT NULL,
+            name TEXT NOT NULL,
+            img TEXT NOT NULL,
+            count INTEGER NOT NULL,
+            total INTEGER NOT NULL,
+            perDraw INTEGER NOT NULL
+         )",
+        [],
+    )?;
+    Ok(())
+}
+
+// pub fn create_winner_table(pool: &DbPool) -> Result<()> {
+//     let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
+//     conn.execute(
+//         "CREATE TABLE IF NOT EXISTS winner (
+//             id INTEGER PRIMARY KEY AUTOINCREMENT,
+//             range TEXT NOT NULL,
+//             name TEXT NOT NULL,
+//             img TEXT NOT NULL,
+//             count INTEGER NOT NULL,
+//             total INTEGER NOT NULL,
+//             perDraw INTEGER NOT NULL
+//          )",
+//         [],
+//     )?;
+//     Ok(())
+// }
+
 pub fn create_user(pool: &DbPool, userCard: &UserCard) -> Result<usize> {
     let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
     let count = conn.execute(
-        "INSERT INTO userCard (num, name, img, remark1, remark2) VALUES (?1, ?2, ?3, ?4, ?5)",
-        params![userCard.num, userCard.name, userCard.img, userCard.remark1, userCard.remark2],
+        "INSERT INTO userCard (num, name, img, remark) VALUES (?1, ?2, ?3, ?4)",
+        params![userCard.num, userCard.name, userCard.img, userCard.remark],
     )?;
     Ok(count)
 }
@@ -58,8 +91,8 @@ pub fn create_batch_users(pool: &DbPool, data: Vec<UserCard>) -> Result<()> {
 
     for user_card in data {
         tx.execute(
-            "INSERT INTO userCard (num, name, img, remark1, remark2) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![user_card.num, user_card.name, user_card.img, user_card.remark1, user_card.remark2],
+            "INSERT INTO userCard (num, name, img, remark) VALUES (?1, ?2, ?3, ?4)",
+            params![user_card.num, user_card.name, user_card.img, user_card.remark],
         )?;
     }
     tx.commit()?;
@@ -69,7 +102,7 @@ pub fn create_batch_users(pool: &DbPool, data: Vec<UserCard>) -> Result<()> {
 pub fn select_user(pool: &DbPool, id: i32) -> Result<UserCard> {
     let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
     let user_card = conn.query_row(
-        "SELECT id, num, name, img, remark1, remark2 FROM userCard WHERE id = ?1",
+        "SELECT id, num, name, img, remark FROM userCard WHERE id = ?1",
         params![id],
         |row| {
             Ok(UserCard {
@@ -77,8 +110,7 @@ pub fn select_user(pool: &DbPool, id: i32) -> Result<UserCard> {
                 num: row.get(1)?,
                 name: row.get(2)?,
                 img: row.get(3)?,
-                remark1: row.get(4)?,
-                remark2: row.get(5)?,
+                remark: row.get(4)?,
             })
         },
     )?;
@@ -91,30 +123,27 @@ pub fn delete_user(pool: &DbPool, id: i32) -> Result<()> {
     Ok(())
 }
 
-pub fn edit_user(pool: &DbPool, userCard: &UserCard) -> Result<usize> {
+pub fn update_user(pool: &DbPool, userCard: &UserCard) -> Result<usize> {
     let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
     let count = conn.execute(
-        "UPDATE userCard SET name = ?1, img = ?2, remark1 = ?3, remark2 = ?4 WHERE id = ?5",
-        params![userCard.name, userCard.img, userCard.remark1, userCard.remark2, userCard.id],
+        "UPDATE userCard SET name = ?1, img = ?2, remark = ?3 WHERE id = ?4",
+        params![userCard.name, userCard.img, userCard.remark, userCard.id],
     )?;
     Ok(count)
 }
 
-
 pub fn get_page_users(pool: &DbPool, page: usize, page_size: usize) -> Result<Vec<UserCard>> {
     let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
-    let mut stmt = conn.prepare("SELECT id, num, name, img, remark1, remark2 FROM userCard LIMIT ? OFFSET ?")?;
+    let mut stmt = conn.prepare("SELECT id, num, name, img, remark FROM userCard LIMIT ? OFFSET ?")?;
     let user_iter = stmt.query_map(params![page_size as i64, ((page - 1) * page_size) as i64], |row| {
         Ok(UserCard {
             id: row.get(0)?,
             num: row.get(1)?,
             name: row.get(2)?,
             img: row.get(3)?,
-            remark1: row.get(4)?,
-            remark2: row.get(5)?,
+            remark: row.get(4)?
         })
     })?;
-
     let mut users = Vec::new();
     for user in user_iter {
         users.push(user?);
@@ -122,8 +151,129 @@ pub fn get_page_users(pool: &DbPool, page: usize, page_size: usize) -> Result<Ve
     Ok(users)
 }
 
-pub fn get_total_users_count(pool: &DbPool) -> Result<usize> {
+pub fn get_all_users(pool: &DbPool) -> Result<Vec<UserCard>> {
+    let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
+    let mut stmt = conn.prepare("SELECT id, num, name, img, remark FROM userCard")?;
+    let user_iter = stmt.query_map( params![], |row| {
+        Ok(UserCard {
+            id: row.get(0)?,
+            num: row.get(1)?,
+            name: row.get(2)?,
+            img: row.get(3)?,
+            remark: row.get(4)?
+        })
+    })?;
+    let mut users = Vec::new();
+    for user in user_iter {
+        users.push(user?);
+    }
+    Ok(users)
+}
+
+pub fn get_total_count_user(pool: &DbPool) -> Result<usize> {
     let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
     let count: i64 = conn.query_row("SELECT COUNT(1) FROM userCard", [], |row| row.get(0))?;
     Ok(count as usize)
 }
+
+pub fn update_prize(pool: &DbPool, prize: &Prize) -> Result<usize> {
+    let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
+    let count = conn.execute(
+        "UPDATE prize SET range=?1,name=?2,img=?3,count=?4,total=?5,perDraw=?6 WHERE id = ?7",
+        params![prize.range, prize.name, prize.img,  prize.count, prize.total, prize.perDraw, prize.id],
+    )?;
+    Ok(count)
+}
+
+pub fn create_prize(pool: &DbPool, prize: &Prize) -> Result<usize> {
+    let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
+    let count = conn.execute(
+        "INSERT INTO prize (range,name,img,count,total,perDraw) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![prize.range, prize.name, prize.img,  prize.count, prize.total, prize.perDraw],
+    )?;
+    Ok(count)
+}
+
+pub fn delete_prize(pool: &DbPool, id: i32) -> Result<()> {
+    let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
+    conn.execute("DELETE FROM prize WHERE id = ?1", params![id])?;
+    Ok(())
+}
+
+pub fn get_page_prizes(pool: &DbPool, page: usize, page_size: usize) -> Result<Vec<Prize>> {
+    let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
+    let mut stmt = conn.prepare("SELECT id,range,name,img,count,total,perDraw FROM prize LIMIT ? OFFSET ?")?;
+    let prize_iter = stmt.query_map(params![page_size as i64, ((page - 1) * page_size) as i64], |row| {
+        Ok(Prize {
+            id: row.get(0)?,
+            range: row.get(1)?,
+            name: row.get(2)?,
+            img: row.get(3)?,
+            count: row.get(4)?,
+            total: row.get(5)?,
+            perDraw: row.get(6)?
+        })
+    })?;
+    let mut prizes = Vec::new();
+    for prize in prize_iter {
+        prizes.push(prize?);
+    }
+    Ok(prizes)
+}
+
+pub fn get_all_prizes(pool: &DbPool) -> Result<Vec<Prize>> {
+    let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
+    let mut stmt = conn.prepare("SELECT id,range,name,img,count,total,perDraw FROM prize")?;
+    let prize_iter = stmt.query_map( params![], |row| {
+        Ok(Prize {
+            id: row.get(0)?,
+            range: row.get(1)?,
+            name: row.get(2)?,
+            img: row.get(3)?,
+            count: row.get(4)?,
+            total: row.get(5)?,
+            perDraw: row.get(6)?
+        })
+    })?;
+    let mut prizes = Vec::new();
+    for prize in prize_iter {
+        prizes.push(prize?);
+    }
+    Ok(prizes)
+}
+
+pub fn select_prize(pool: &DbPool, id: i32) -> Result<Prize> {
+    let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
+    let prize = conn.query_row(
+        "SELECT id,range,name,img,count,total,perDraw FROM prize WHERE id = ?1",
+        params![id],
+        |row| {
+            Ok(Prize {
+                id: row.get(0)?,
+                range: row.get(1)?,
+                name: row.get(2)?,
+                img: row.get(3)?,
+                count: row.get(4)?,
+                total: row.get(5)?,
+                perDraw: row.get(6)?
+            })
+        },
+    )?;
+    Ok(prize)
+}
+
+pub fn get_total_count_prize(pool: &DbPool) -> Result<usize> {
+    let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
+    let count: i64 = conn.query_row("SELECT COUNT(1) FROM prize", [], |row| row.get(0))?;
+    Ok(count as usize)
+}
+
+pub fn update_prize_count(pool: &DbPool, id: i32) -> Result<usize> {
+    let conn = pool.get().map_err(|_| AppError::ConnectionPoolError)?;
+    let count = conn.execute(
+        "UPDATE prize SET count=count+perDraw WHERE id = ?1",
+        params![id],
+    )?;
+    Ok(count)
+}
+

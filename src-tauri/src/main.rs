@@ -10,10 +10,10 @@ mod utils;
 
 use std::env::temp_dir;
 use tauri::{Builder, Manager};
-use db::{init_pool,create_card_table};
+use db::{create_prize_table, init_pool,create_card_table};
 use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
 use tauri::api::path::app_data_dir;
-use commands::{update_user, get_user, create_user, get_page_users, generate_imgstr, batch_excel_operate, download_template_excel, delete_user};
+use commands::{update_prize_count, get_all_prizes, get_all_users, get_page_prizes, delete_prize, update_prize,create_prize,get_prize,update_user, get_user, create_user, get_page_users, generate_imgstr, batch_excel_operate, download_template_excel, delete_user};
 
 fn main() {
 
@@ -25,13 +25,14 @@ fn main() {
             return; // 或退出程序 std::process::exit(1);
         }
     };
-    let _ = create_card_table(&pool);
+    create_card_table(&pool);
+    create_prize_table(&pool);
 
     // 这里 `"quit".to_string()` 定义菜单项 ID，第二个参数是菜单项标签。
-    let rule = CustomMenuItem::new("pageManage".to_string(), "Manage");
-    let data = CustomMenuItem::new("pageWinners".to_string(), "Winners");
+    let rule = CustomMenuItem::new("Manage".to_string(), "Manage");
+    let data = CustomMenuItem::new("Winners".to_string(), "Winners");
     let settings = Submenu::new("Settings", Menu::new().add_item(rule).add_item(data));
-    let weeding = CustomMenuItem::new("pageWedding".to_string(), "Wedding");
+    let weeding = CustomMenuItem::new("Wedding".to_string(), "Wedding");
     let model = Submenu::new("model", Menu::new().add_item(weeding));
     let menu = Menu::new()
         .add_native_item(MenuItem::Copy)
@@ -62,10 +63,8 @@ fn main() {
             if let window = event.window() {
                 window.emit("navigate", event_name).expect("Failed to emit navigate event");
             }
-
         })
-        .invoke_handler(tauri::generate_handler![update_user, get_user, generate_imgstr,create_user,get_page_users,batch_excel_operate,download_template_excel,delete_user])
+        .invoke_handler(tauri::generate_handler![update_prize_count, get_all_prizes, get_all_users, update_prize, create_prize, get_prize, get_page_prizes, delete_prize, update_user, get_user, generate_imgstr,create_user,get_page_users,batch_excel_operate,download_template_excel,delete_user])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-
 }

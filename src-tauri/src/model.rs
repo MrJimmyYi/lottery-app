@@ -3,6 +3,12 @@ use thiserror::Error;
 use rusqlite::{self, params, Connection};
 use tauri::InvokeError;
 
+#[derive(Serialize, Deserialize)]
+pub struct TauriResponse<T> {
+    pub message: String,
+    pub data: Option<T>,
+}
+
 #[derive(Serialize, Deserialize,Debug)]
 #[serde(default)] // 为所有字段应用默认值
 pub struct UserCard {
@@ -10,8 +16,20 @@ pub struct UserCard {
     pub num: String,
     pub name: String,
     pub img: String,
-    pub remark1: String,
-    pub remark2: String,
+    pub remark: String,
+}
+
+
+#[derive(Serialize, Deserialize,Debug)]
+#[serde(default)] // 为所有字段应用默认值
+pub struct Prize {
+    pub id: i32,
+    pub range: String,
+    pub name: String,
+    pub img: String,
+    pub count: i32,
+    pub total: i32,
+    pub perDraw: i32
 }
 
 // 防止json字符串转成UserCard的时候id为0默认值
@@ -22,15 +40,28 @@ impl Default for UserCard {
             num: String::new(),
             name: String::new(),
             img: String::new(),
-            remark1: String::new(),
-            remark2: String::new(),
+            remark: String::new(),
+        }
+    }
+}
+
+impl Default for Prize {
+    fn default() -> Prize {
+        Prize {
+            id: 0, // 提供默认值
+            range: String::new(),
+            name: String::new(),
+            img: String::new(),
+            count: 0,
+            total: 0,
+            perDraw: 0
         }
     }
 }
 
 #[derive(Serialize)]
-pub struct PagedUserResponse {
-    pub users: Vec<UserCard>,
+pub struct PagedData<T> {
+    pub data: Vec<T>,
     pub total: usize,
 }
 
