@@ -62,8 +62,8 @@ import {onMounted, ref} from "vue";
 import {invoke} from "@tauri-apps/api/tauri";
 import {ElMessage, ElMessageBox} from "element-plus";
 import {convertFileSrc} from "@tauri-apps/api/tauri";
-import PrizeAdd from "@/views/ManagePrize/add.vue";
-import PrizeEdit from "@/views/ManagePrize/edit.vue";
+import PrizeAdd from "@/views/manage/prize/Add.vue";
+import PrizeEdit from "@/views/manage/prize/Edit.vue";
 import {PageData, Prize, TauriResponse} from "@/types";
 
 const tableData = ref<Prize[]>([])

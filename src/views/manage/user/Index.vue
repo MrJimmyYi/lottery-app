@@ -65,9 +65,9 @@ import {UserCard, TauriResponse, PageData} from "@/types";
 import {invoke} from "@tauri-apps/api/tauri";
 import {ElMessage, ElMessageBox} from "element-plus";
 import {convertFileSrc} from "@tauri-apps/api/tauri";
-import UserAdd from "@/views/ManageUser/add.vue";
-import UserEdit from "@/views/ManageUser/edit.vue";
-import BatchOper from "@/views/ManageUser/batchOper.vue";
+import UserAdd from "@/views/manage/user/Add.vue";
+import UserEdit from "@/views/manage/user/Edit.vue";
+import BatchOper from "@/views/manage/user/BatchOper.vue";
 
 const tableData = ref<UserCard[]>([])
 const createDialogVisible = ref(false);

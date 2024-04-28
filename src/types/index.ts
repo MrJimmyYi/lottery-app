@@ -72,3 +72,22 @@ export interface  TauriResponse<T> {
     message: string;
     data: T | null;
 }
+
+export interface Winner {
+    id: number,
+    prizeRange: string,
+    prizeName: string,
+    winnerNum: string,
+    winnerName: string
+}
+
+export interface ModelBasic {
+    id: number,
+    model: string,
+    bgImg: string,
+    audioSrc: string,
+    reDrawing: number,
+    remark1: string,
+    remark2: string,
+    spinTime: number
+}

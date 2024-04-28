@@ -26,7 +26,7 @@ func main() {
 	exfile := os.Args[1]
 	imgDir := os.Args[2]
 	//filename := "Book1.xlsx"
-	//imgDir := "/Users/yiji/Desktop/Src/Workspace/op_excel"
+	//imgDir := "/Users/jimmy/Desktop/Src/Workspace/op_excel"
 	f, err := excelize.OpenFile(exfile)
 	if err != nil {
 		fmt.Println(err)

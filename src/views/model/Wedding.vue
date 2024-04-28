@@ -1,49 +1,66 @@
 <template>
-  <div id="prizeBar">
-    <div class="prize-mess" >正在抽取
-      <span v-if="selectedPrize">
+  <div :style="{ backgroundImage: 'url(' + backgroundImageUrl + ')' }" class="background-container">
+    <div id="prizeBar">
+      <div class="prize-mess" >正在抽取
+        <span v-if="selectedPrize">
         <label id="prizeType" class="prize-shine">{{selectedPrize.range}}</label>
         <label id="prizeText" class="prize-shine">{{selectedPrize.name}}</label>， 剩余<label id="prizeLeft" class="prize-shine">{{selectedPrize.total-selectedPrize.count}}</label>个
       </span>
-    </div>
-    <ul class="prize-list">
-      <li v-for="prize in prizesArray" :key="prize.id"
-          :class="{ 'prize-item': true, 'shine': selectedPrize?selectedPrize.id === prize.id: false }"
-          @click="updatePrizeInfo(prize)">
-        <span></span><span></span><span></span><span></span>
-        <div class="prize-img">
-          <img :src="prize.img" >
-        </div>
-        <div class="prize-text">
-          <h5 class="prize-title">{{ prize.name }}</h5>
-          <div class="prize-count">
-            <div class="progress">
-              <div :id="`prize-bar-${prize.id}`" class="progress-bar progress-bar-danger progress-bar-striped active" :style="{ width: (prize.count*100/prize.total).toString()+'%' }"></div>
-            </div>
-            <div :id="`prize-count-${prize.id}`" class="prize-count-left">{{ prize.count }}/{{ prize.total }}</div>
+      </div>
+      <ul class="prize-list">
+        <li v-for="prize in prizesArray" :key="prize.id"
+            :class="{ 'prize-item': true, 'shine': selectedPrize?selectedPrize.id === prize.id: false }"
+            @click="updatePrizeInfo(prize)">
+          <span></span><span></span><span></span><span></span>
+          <div class="prize-img">
+            <img :src="prize.img" >
           </div>
-        </div>
-      </li>
-    </ul>
+          <div class="prize-text">
+            <h5 class="prize-title">{{ prize.range }} {{ prize.name }}</h5>
+            <div class="prize-count">
+              <div class="progress">
+                <div :id="`prize-bar-${prize.id}`" class="progress-bar progress-bar-danger progress-bar-striped active" :style="{ width: (prize.count*100/prize.total).toString()+'%' }"></div>
+              </div>
+              <div :id="`prize-count-${prize.id}`" class="prize-count-left">{{ prize.count }}/{{ prize.total }}</div>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div id="cards-container" ref="containerRef"></div>
+
+    <div id="menu">
+      <button id="enter" :class="{ none: !(drawStatus===DRAW_STATUS.ENTER) }" @click="handleToDraw">进入抽奖</button>
+      <button class="lottery"  :class="{ none: !(drawStatus===DRAW_STATUS.READY )}" @click="startDrawing">开始抽奖</button>
+      <button class="lottery"  :class="{ none: !(drawStatus===DRAW_STATUS.DRAWING) }" >正在抽奖</button>
+      <button class="lottery"  :class="{ none: !(drawStatus===DRAW_STATUS.DOWN) }" @click="stopDrawing">结束抽奖</button>
+    </div>
+
+    <div class="music">
+      <audio ref="musicPlayer"  class="music-item" loop></audio>
+      <div ref="musicBox" class="music-box" title="播放/暂停背景音乐"  @click="toggleMusic"></div>
+    </div>
   </div>
-
-  <div id="cards-container" ref="containerRef"></div>
-
-  <div id="menu">
-    <button id="enter" :class="{ none: !(drawStatus===DRAW_STATUS.ENTER) }" @click="handleToDraw">进入抽奖</button>
-    <button class="lottery"  :class="{ none: !(drawStatus===DRAW_STATUS.READY )}" @click="startDrawing">开始抽奖</button>
-    <button class="lottery"  :class="{ none: !(drawStatus===DRAW_STATUS.DRAWING) }" >正在抽奖</button>
-    <button class="lottery"  :class="{ none: !(drawStatus===DRAW_STATUS.DOWN) }" @click="stopDrawing">结束抽奖</button>
-  </div>
-
 </template>
 
 <script setup lang="ts">
 import {onBeforeUnmount, onMounted, ref, watch} from 'vue';
 import {CSS3DObject, CSS3DRenderer} from 'three/addons/renderers/CSS3DRenderer.js';
 import {Tween} from '@tweenjs/tween.js';
-import {CreateHeartHighlight, RemoveHighlight} from "@/hooks/Matrix";
-import {COLUMN_COUNT, DRAW_STATUS, Prize, ROW_COUNT, Target, TauriResponse, UserCard, WIDTH} from "@/types";
+import {CreateHeartHighlight, RemoveHighlight} from "@/hooks/Matrix.ts";
+import {
+  COLUMN_COUNT,
+  DRAW_STATUS,
+  ModelBasic,
+  Prize,
+  ROW_COUNT,
+  Target,
+  TauriResponse,
+  UserCard,
+  WIDTH,
+  Winner
+} from "@/types";
 import {
   Animate,
   Create3D,
@@ -55,10 +72,13 @@ import {
   SelectCard,
   ShineCard,
   Transform
-} from "@/hooks/userCard";
+} from "@/hooks/userCard.ts";
 import {Euler} from "three";
-import {GetLuckNum} from "@/utils/lottery";
+import {GetLuckNum} from "@/utils/lottery.ts";
 import {convertFileSrc, invoke} from "@tauri-apps/api/tauri";
+import {ElNotification} from "element-plus";
+import { h } from 'vue'
+
 
 const drawStatus = ref("");
 
@@ -72,6 +92,26 @@ let targets: Target = { table: [], sphere: [] };
 let rotateObj: Tween<Euler>;
 let animationFrameId: number | null = null;
 let renderer: CSS3DRenderer;
+const musicPlayer = ref<HTMLAudioElement|null>(null);
+const musicBox = ref<HTMLDivElement|null>(null);
+let rotated = ref(0);
+let stopAnimate = ref(false);
+const backgroundImageUrl = ref("src/assets/img/bg.png");
+
+// const computedBackgroundImage = computed(() => {
+//   return backgroundImageUrl.value || ''; // 如果没有图片 URL，则使用默认图片
+// });
+
+const basicForm = ref<ModelBasic>({
+  id: 1,
+  model: "wedding",
+  bgImg: "",
+  audioSrc: "",
+  reDrawing: 1,
+  spinTime: 10,
+  remark1: "",
+  remark2: ""
+})
 
 const prizesArray = ref<Array<Prize>>([])
 const selectedPrize = ref<Prize | null>(null);
@@ -81,11 +121,11 @@ onMounted( async () => {
   await fetchUserCards();
   init();
   window.addEventListener("resize", ResieWindow, false);
+  fetchBasicModel("wedding");
   bindCloseBtn();
 });
 
 onBeforeUnmount(() => {
-  console.log('onBeforeUnmount')
   if(animationFrameId){
     cancelAnimationFrame(animationFrameId);
     animationFrameId=null;
@@ -97,8 +137,45 @@ onBeforeUnmount(() => {
   window.onresize = null;
 });
 
+
+const toggleMusic = ():void => {
+  if (musicPlayer.value) {
+    if (musicPlayer.value.paused) {
+      musicPlayer.value.play().then(
+          () => {
+            stopAnimate.value = false;
+            animate();
+          },
+          () => {
+            console.error('背景音乐自动播放失败');
+          }
+      );
+    } else {
+      musicPlayer.value.pause();
+      stopAnimate.value = true;
+    }
+  }
+}
+
+const animate = ():void => {
+  requestAnimationFrame(() => {
+    if (stopAnimate.value) {
+      return;
+    }
+    rotated.value = rotated.value % 360;
+    if (musicBox.value) {
+      musicBox.value.style.transform = `rotate(${rotated.value}deg)`;
+    }
+    rotated.value += 1;
+    animate();
+  });
+}
+
 // Initialization function
 const init = ():void => {
+  if (allCardsArray.value.length == 0) {
+    return
+  }
   let isBold = false
   let index = 0
   let highlightCell = CreateHeartHighlight();
@@ -116,8 +193,7 @@ const init = ():void => {
   intervalId = ShineCard(threeDCards, allCardsArray.value, tempSelectedIndex, drawStatus.value);
 }
 
-watch(drawStatus, (newVal, oldVal) => {
-  console.log("oldVal:", oldVal, "showTable updated to: ", newVal); // 当 showTable 更新时，这里会被调用
+watch(drawStatus, (newVal) => {
   if(newVal === DRAW_STATUS.DRAWING) {
     rotateBall();
   } else if (newVal === DRAW_STATUS.DOWN) {
@@ -128,6 +204,34 @@ watch(drawStatus, (newVal, oldVal) => {
     showSphere();
   }
 });
+
+const fetchBasicModel = async (model: string) => {
+  try {
+    // 调用后端接口获取分页数据，传递当前页和每页条目数
+    let res = await invoke('get_model_basic', {
+      model: model,
+    }) as TauriResponse<ModelBasic>;
+
+    if(res.data) {
+      let data = res.data;
+      basicForm.value.bgImg = data.bgImg ? convertFileSrc(data.bgImg) : '';
+      basicForm.value.id = data.id;
+      basicForm.value.audioSrc = data.audioSrc;
+      basicForm.value.spinTime = data.spinTime;
+    }
+
+    backgroundImageUrl.value = basicForm.value.bgImg
+
+    if (musicPlayer.value && basicForm.value.audioSrc) {
+      const musicUrl = convertFileSrc(basicForm.value.audioSrc);
+      musicPlayer.value.src = musicUrl;
+    }
+
+  } catch (error) {
+    console.error('failed to fetch wedding model:', error);
+  }
+
+}
 
 const rotateBall = ()=> {
   ResetCard(targets, excludeIndex, threeDCards).then(() => {
@@ -150,27 +254,11 @@ const stopBall = () => {
   }
   const p = selectedPrize.value
   if (p) {
-    console.log("+++++")
-    console.log(p.perDraw)
     tempSelectedIndex.value = GetLuckNum(allCardsArray.value, excludeIndex, p.perDraw ?? 0);
-    // updatePrizeCount(p?.id)
-    // fetchPrizes()
-    console.log(tempSelectedIndex.value)
     excludeIndex = excludeIndex.concat(tempSelectedIndex.value)
     SelectCard(threeDCards, tempSelectedIndex.value, allCardsArray.value)
   }
 }
-
-
-// const updatePrizeCount = async (id: number) => {
-//   try {
-//     await invoke('update_prize_count', {
-//       id: id
-//     });
-//   } catch (error) {
-//
-//   }
-// }
 
 const showTable = () => {
   Transform("table", targets, threeDCards);
@@ -227,16 +315,55 @@ const handleToDraw = (): void => {
 }
 
 const startDrawing = (): void => {
+  // 检查是否有物品选中，如果没有则不进行物品抽奖提醒
+  if(selectedPrize.value === null) {
+    ElNotification({
+      title: '提示',
+      message: h('i', { style: 'color: teal' }, '请选则奖品进行抽奖'),
+    })
+    return
+  }
   drawStatus.value = DRAW_STATUS.DRAWING
 }
 
-const stopDrawing = (): void => {
+const stopDrawing = async () => {
+  //获取当前选中的奖品的信息
+  let s = selectedPrize.value
+  if(s != null ){
+    try {
+      // 调用后端接口获取分页数据，传递当前页和每页条目数
+      let res = await invoke('update_prize_count', {id: s.id}) as TauriResponse<number>;
+      if(res.data) {
+        fetchPrizes()
+        addWinners(s)
+        drawStatus.value = DRAW_STATUS.READY
+      }
 
-  drawStatus.value = DRAW_STATUS.READY
+    } catch (error) {
+      console.error('update prize count failed:', error);
+    }
+  }
+}
+
+const addWinners = async (s: Prize) => {
+  let w:Array<Winner> = []
+  for(let t of tempSelectedIndex.value) {
+    let user = allCardsArray.value[t]
+    w.push({prizeName: s.name, prizeRange: s.range, winnerName: user.name, winnerNum: user.num, id:0})
+  }
+  try {
+    await invoke('create_winners', {winners: w}) as TauriResponse<string>;
+    const wname = w.map(winner => winner.winnerName).join(',');
+    ElNotification({
+      title: '提示',
+      message: h('i', { style: 'color: teal' }, "恭喜以下中奖人员："+wname),
+    })
+  } catch (error) {
+    console.error('Failed to fetch paged users:', error);
+  }
 }
 
 const fetchPrizes = async () => {
-  console.log("fetchPrizes")
   try {
     // 调用后端接口获取分页数据，传递当前页和每页条目数
     let res = await invoke('get_all_prizes') as TauriResponse<Prize[]>;
@@ -294,6 +421,11 @@ body {
   overflow: hidden;
 }
 
+.background-container {
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+}
 
 .none {
   display: none;
@@ -827,8 +959,8 @@ button:active {
 }
 
 .music-box {
-  width: 5vh;
-  height: 5vh;
+  width: 8vh;
+  height: 8vh;
   border-radius: 50%;
   text-align: center;
   line-height: 5vh;
@@ -891,4 +1023,34 @@ button:active {
     opacity: 0.8;
   }
 }
+
+.music {
+  position: fixed;
+  top: 3vh;
+  right: 4vh;
+  z-index: 5;
+}
+
+.music-item {
+  display: block !important;
+  opacity: 0;
+}
+
+.music-box {
+  width: 5vh;
+  height: 5vh;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 5vh;
+  font-size: 1.4vh;
+  color: #fff;
+  cursor: pointer;
+  /* background-color: rgba(253, 105, 0, 0.9); */
+  background: url('src/assets/img/music.svg') no-repeat;
+  background-size: 100% 100%;
+  /* border: 1px solid rgba(255, 255, 255, 0.5); */
+}
 </style>
+
+
+

@@ -41,7 +41,6 @@
 
 <script lang="ts" setup>
 import { Menu as IconMenu, Setting } from '@element-plus/icons-vue'
-
 </script>
 
 <style scoped>

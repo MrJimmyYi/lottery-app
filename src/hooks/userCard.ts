@@ -193,7 +193,7 @@ export const SelectCard = (threeDCards: Array<CSS3DObject>, selectedIndex:Array<
             for (let i = selectedIndex.length; i > 0; i--) {
                 locates.push({
                     x: tag * width * RESOLUTION,
-                    y: locates[i].y
+                    y: -87
                 });
                 tag++;
             }

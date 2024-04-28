@@ -11,11 +11,8 @@ app.use(router);
 app.use(ElementPlus);
 // 示例: 监听后端 Tauri 事件（确保事件名称和负载类型正确）
 listen('navigate', (event) => {
-    if (typeof event.payload === 'string') {
-        // 使用路由导航到不同页面
-        console.log(event.payload)
-        router.push({ name: event.payload });
-    }
+    const playLoad = event.payload as string
+    router.push({ name: playLoad });
 }).catch((error) => console.error('Error listening to navigate event', error));
 
 // 挂载 Vue 应用
