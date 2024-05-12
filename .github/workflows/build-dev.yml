@@ -6,9 +6,10 @@ on:
     # paths-ignore: # 避免这些文件改变时触发
     #   - README.md
     #   - LICENSE
-#    paths: # 指定哪些文件改变时触发
-#      - src/**
-#      - package.json
+    # 指定哪些文件改变时触发
+    paths:
+      - src/**
+      - src-tauri/**
 
 jobs:
   dev-build-apps:
@@ -43,7 +44,7 @@ jobs:
       - name: Sync node version and setup cache
         uses: actions/setup-node@v3
         with:
-          node-version: '16.20.2'
+          node-version: '18.19.0'
           cache: 'npm' # Set this to npm, yarn or pnpm.
 
       - name: Install frontend dependencies
