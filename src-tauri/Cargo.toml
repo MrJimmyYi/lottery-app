@@ -11,7 +11,7 @@ edition = "2021"
 tauri-build = { version = "1.5", features = [] }
 
 [dependencies]
-rusqlite = "0.31.0"
+rusqlite = { version = "0.31.0", features = ["bundled"] }
 r2d2 = "0.8.10"
 r2d2_sqlite = "0.24.0"
 tauri = { version = "1.5", features = [ "dialog-all", "path-all", "fs-all", "protocol-asset", "shell-open"] }
