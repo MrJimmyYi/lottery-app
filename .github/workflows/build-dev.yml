@@ -54,10 +54,11 @@ jobs:
       - name: Build the app
         run: npm run tauri build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+      - name: show
         run: |
           dir target/release
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
         with:
           name: build-artifacts-${{ matrix.platform }}
           path: |
