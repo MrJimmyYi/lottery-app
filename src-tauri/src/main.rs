@@ -65,7 +65,8 @@ fn main() {
                 window.emit("navigate", event_name).expect("Failed to emit navigate event");
             }
         })
-        .invoke_handler(tauri::generate_handler![get_all_winners,get_page_winners,create_winners, update_prize_count, get_all_prizes,
+        .invoke_handler(tauri::generate_handler![get_all_winners,get_page_winners,create_winners,
+            update_prize_count, get_all_prizes,
             get_all_users, update_prize, create_prize, get_prize, get_page_prizes, delete_prize, update_user,
             get_user, generate_imgstr,create_user,get_page_users,batch_excel_operate,download_template_excel,delete_user,
             get_model_basic, generate_audiostr, update_basic_model])
