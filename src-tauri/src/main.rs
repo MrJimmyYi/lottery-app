@@ -53,6 +53,7 @@ fn main() {
             let uploads_dir = temp_dir.join("file");
             // 尝试创建目录（如果它还不存在）
             std::fs::create_dir_all(&uploads_dir).map_err(|e| e.to_string())?;
+
             Ok(())
         })
         // 将数据库连接池存储为应用状态
