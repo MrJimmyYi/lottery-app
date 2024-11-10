@@ -57,7 +57,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: build-artifacts-${{ matrix.platform }}
+          name: lottery-app-${{ matrix.platform }}
           path: |
             ${{ matrix.platform == 'windows-latest' && './target/release/lottery-app.exe' || './target/release/lottery-app' }}
           retention-days: 1
